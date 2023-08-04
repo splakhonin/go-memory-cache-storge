@@ -2,7 +2,7 @@
  Memory Cache Storage
 
 Installation:
-1. go get -u github.com/cesarFuhr/go-memory-cache-storge
+1. go get -u github.com/splakhonin/go-memory-cache-storge
 
 To check the code coverage:
 
