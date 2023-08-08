@@ -82,25 +82,6 @@ func TestCache_GetWithTTL_Failed(t *testing.T) {
 	t.Error("Expected an error due to TTL expiration, but got NO error")
 }
 
-func TestCache_Delete(t *testing.T) {
-	cache := NewCache()
-
-	value := "test value"
-	key := "test-key"
-
-	cache.Set(key, value)
-
-	err := cache.Delete(key)
-	if err != nil {
-		t.Errorf("Expected no error, but got: %v", err)
-	}
-
-	_, err = cache.Get(key)
-	if err == nil {
-		t.Errorf("Expected an error after deleting, but got no error")
-	}
-}
-
 func TestCache_CacheClean(t *testing.T) {
 	cache := NewCache()
 

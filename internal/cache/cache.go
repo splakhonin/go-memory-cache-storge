@@ -12,7 +12,7 @@ const (
 )
 
 type Cache struct {
-	Storage  map[string]cachedData
+	storage  map[string]cachedData
 	mu       *sync.RWMutex
 	cleaner  *time.Ticker
 	stopChan chan struct{}
@@ -26,7 +26,7 @@ type cachedData struct {
 // NewCache initializes a new cache instance with a background cleaner
 func NewCache() *Cache {
 	c := &Cache{
-		Storage:  make(map[string]cachedData),
+		storage:  make(map[string]cachedData),
 		mu:       &sync.RWMutex{},
 		cleaner:  time.NewTicker(cleanInterval),
 		stopChan: make(chan struct{}),
@@ -50,15 +50,20 @@ func (c *Cache) startCleaner() {
 	}
 }
 
+// StopCleaner stop the background cleaner
+func (c *Cache) StopCleaner() {
+	close(c.stopChan)
+}
+
 func (c *Cache) clean() {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
 	now := time.Now()
 
-	for key, cacheData := range c.Storage {
+	for key, cacheData := range c.storage {
 		if cacheData.expiry.Before(now) {
-			delete(c.Storage, key)
+			delete(c.storage, key)
 		}
 	}
 }
@@ -77,7 +82,7 @@ func (c *Cache) Set(key string, value interface{}, ttl ...time.Duration) {
 		expiry = time.Now().Add(defaultTTL) // Use default TTL from the constant
 	}
 
-	c.Storage[key] = cachedData{
+	c.storage[key] = cachedData{
 		value:  value,
 		expiry: expiry,
 	}
@@ -88,7 +93,7 @@ func (c *Cache) Get(key string) (interface{}, error) {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
 
-	cacheData, ok := c.Storage[key]
+	cacheData, ok := c.storage[key]
 	if !ok {
 		return nil, errors.New("key does not exist")
 	}
@@ -96,35 +101,16 @@ func (c *Cache) Get(key string) (interface{}, error) {
 	return cacheData.value, nil
 }
 
-// Delete a value from cache
-func (c *Cache) Delete(key string) error {
-	c.mu.Lock()
-	defer c.mu.Unlock()
-
-	_, ok := c.Storage[key]
-	if !ok {
-		return errors.New("key does not exist")
-	}
-
-	delete(c.Storage, key)
-	return nil
-}
-
-// StopCleaner stop the background cleaner
-func (c *Cache) StopCleaner() {
-	close(c.stopChan)
-}
-
 // CacheClean removes a value from cache by key
 func (c *Cache) CacheClean(key string) error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
-	_, ok := c.Storage[key]
+	_, ok := c.storage[key]
 	if !ok {
 		return errors.New("key does not exist")
 	}
 
-	delete(c.Storage, key)
+	delete(c.storage, key)
 	return nil
 }
